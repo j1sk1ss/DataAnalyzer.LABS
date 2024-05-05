@@ -1,4 +1,5 @@
 import flet as ft
+import flet_core.control_event
 import pandas as pd
 
 from main import load_csv, data_is_loaded, get_data, set_data, summary
@@ -95,16 +96,59 @@ def main(page: ft.Page):
 
     # endregion
 
+    # region [Graphs Page]
     # Graphs page ===========
-    def open_graphs_page(e):
+    def draw_graph(e: flet_core.control_event.ControlEvent):
+        page_reload()
+        button_headers = [ft.TextButton(x, style=ft.ButtonStyle(color='black'), on_click=draw_graph) for x in get_data().columns]
+        page.add(
+            ft.Row(
+                button_headers
+            )
+        )
+
+        column_name = e.control.text
+        column_data = []
+
+        column = get_data()[column_name]
+        for i in range(len(column)):
+            column_data.append(ft.LineChartDataPoint(i, column[i]))
+
+        chart_data = [ft.LineChartData(
+            data_points=column_data,
+            stroke_width=2,
+            color=ft.colors.LIGHT_GREEN,
+            curved=False,
+            stroke_cap_round=True,
+        )]
+
+        chart = ft.LineChart(
+            data_series=chart_data
+        )
+
+        page.add(chart)
         page.update()
+
+    def open_graphs_page(e):
+        page_reload()
+
+        button_headers = [ft.TextButton(x, style=ft.ButtonStyle(color='black'), on_click=draw_graph) for x in get_data().columns]
+        page.add(
+            ft.Row(
+                button_headers
+            )
+        )
+
+        page.update()
+
+    # endregion
 
     # Corr page ===========
     def open_corr_page(e):
         page.update()
 
     def page_reload():
-        page.clean()
+        page.controls.clear()
 
         page.add(
             ft.Row(
