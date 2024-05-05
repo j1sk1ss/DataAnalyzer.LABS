@@ -7,11 +7,15 @@ import scipy.stats as sps
 from scipy.stats import shapiro
 from scipy.stats import chisquare
 
+import statsmodels.api as sm
+
 from modules.common import get_lists, get_dispersion
 
 
 class Data:
     def __init__(self, dataframe):
+        self.results = None
+        self.model = None
         self.data_body = dataframe
         self.data_names = list(self.data_body.columns.values)
         self.data_lists = get_lists(self.data_body)
@@ -202,6 +206,18 @@ class Data:
         b = np.dot(np.dot(np.linalg.inv(np.dot(input_t, input_data)), input_t), output_data)
         return b
 
+    def fit_model(self, output_name):
+        input_data = self.data_body.drop(columns=[output_name], axis=1)
+        output_data = self.data_body.filter(items=[output_name])
+        
+        self.model = sm.OLS(output_data, input_data)
+        self.results = self.model.fit()
+
+        print(self.results.summary())
+
+    def predict(self, input_data):
+        return self.results.predict(input)
+
     def get_summary(self):
         power = self.get_power()
         average = list(self.get_average(power).values())
@@ -227,5 +243,6 @@ class Data:
             'Интервальное оценивание': self.get_interval_estimation(),
             'Нормальность Хи-Квадрат Пирсона': self.get_chisquare_normal(),
             'Нормальность Шапиро-Уилка': self.get_shapiro_normal(),
-            'Коэффициент регрессии': self.get_regression_coef('Luminosity(L/Lo)')
+            'Коэффициент регрессии': self.get_regression_coef('Luminosity(L/Lo)'),
+            'Regression data': self.fit_model('Luminosity(L/Lo)')
         }
