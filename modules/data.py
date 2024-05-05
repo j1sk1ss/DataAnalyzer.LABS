@@ -33,7 +33,7 @@ class Data:
         for j in range(len(self.data_body.iloc[0])):
             column_average = 0
             for i in range(len(self.data_body)):
-                column_average += float(self.data_body.iloc[i][j])
+                column_average += float(self.data_body.iloc[i].iloc[j])
 
             answer[self.data_names[j]] = column_average / power
 
@@ -44,7 +44,7 @@ class Data:
         for j in range(len(self.data_body.iloc[0])):
             column_average = 0
             for i in range(len(self.data_body)):
-                column_average += float(self.data_body.iloc[i][j])
+                column_average += float(self.data_body.iloc[i].iloc[j])
 
             average.append(column_average)
 
@@ -136,7 +136,7 @@ class Data:
 
     def get_kurtosis(self):
         answer = {}
-        for i in range(self.data_lists):
+        for i in range(len(self.data_lists)):
             answer[self.data_names[i]] = sps.kurtosis(self.data_lists[i], bias=False)
 
         return answer
@@ -213,7 +213,7 @@ class Data:
         self.model = sm.OLS(output_data, input_data)
         self.results = self.model.fit()
 
-        print(self.results.summary())
+        return self.results.summary()
 
     def predict(self, input_data):
         return self.results.predict(input)
@@ -221,7 +221,6 @@ class Data:
     def get_summary(self):
         power = self.get_power()
         average = list(self.get_average(power).values())
-
         std = self.get_standard_deviation(average, power)
         first_std = []
         for i in list(std.values()):
@@ -244,5 +243,5 @@ class Data:
             'Нормальность Хи-Квадрат Пирсона': self.get_chisquare_normal(),
             'Нормальность Шапиро-Уилка': self.get_shapiro_normal(),
             'Коэффициент регрессии': self.get_regression_coef('Luminosity(L/Lo)'),
-            'Regression data': self.fit_model('Luminosity(L/Lo)')
+            'Данные регрессии': self.fit_model('Luminosity(L/Lo)')
         }

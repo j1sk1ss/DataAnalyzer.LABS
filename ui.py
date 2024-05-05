@@ -1,58 +1,134 @@
-from tkinter import ttk, scrolledtext
+import flet as ft
+import pandas as pd
 
-from PIL._tkinter_finder import tk
-
-from main import load_csv, show_graphs
-
-
-data_frame = None
-data_general_text_body = None
-
-graphs_frame = None
-graphs_tabs = None
+from main import load_csv, data_is_loaded, get_data, set_data, summary
 
 
-def generate_body():
-    global data_frame
-    global data_general_text_body
+def main(page: ft.Page):
+    page.title = 'Cordell Data Analyzer'
+    page.theme_mode = 'light'
+    page.vertical_alignment = ft.MainAxisAlignment.START
 
-    global graphs_frame
-    global graphs_tabs
+    # region [Main Page]
+    # Main page ===========
 
-    # Main ===========
+    dataframe_name = ft.Text('...', width=1200)
 
-    root = tk.Tk()
-    root.title('Cordell Space')
-    root.geometry('600x600')
-    root.resizable(width=False, height=False)
+    def get_headers(df: pd.DataFrame) -> list:
+        return [ft.DataColumn(ft.Text(header)) for header in df.columns]
 
-    # Tabs ===========
+    def get_rows(df: pd.DataFrame) -> list:
+        df_rows = []
+        for index, row in df.iterrows():
+            df_rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(row[header])) for header in df.columns]))
+        return df_rows
 
-    tabs = []
-    tab_control = ttk.Notebook(root)
-    for i in ['Данные', 'Основное', 'Графики', 'Корреляция']:
-        tabs.append(ttk.Frame(tab_control))
-        tab_control.add(tabs[len(tabs) - 1], text=i)
+    def open_main_page(e):
+        page_reload()
+        if not data_is_loaded():
+            pick_files_dialog = ft.FilePicker(on_result=upload_file)
+            upload_button = ft.IconButton(ft.icons.UPLOAD, on_click=lambda _: pick_files_dialog.pick_files(
+                allow_multiple=False
+            ), icon_color='black')
 
-    tab_control.pack(expand=1, fill='both')
+            page.add(
+                ft.Row([
+                        upload_button, pick_files_dialog,
+                        dataframe_name
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                )
+            )
+        else:
+            table = ft.DataTable(
+                columns=get_headers(get_data()),
+                rows=get_rows(get_data()),
+                border=ft.border.all(2, 'black')
+            )
 
-    # ================
+            lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
+            lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=lambda _: set_data(None)))
+            lv.controls.append(table)
 
-    # Вкладка "Данные"
-    data_frame = tk.Frame(tabs[0])
-    data_frame.pack(fill='both', expand=1)
-    btn_load_csv = tk.Button(data_frame, text='Загрузить CSV', command=load_csv)
-    btn_load_csv.pack(pady=10)
+            page.add(lv)
 
-    data_general_text_body = scrolledtext.ScrolledText(data_frame, wrap=tk.WORD)
-    data_general_text_body.pack(fill='both', expand=1)
+        page.update()
 
-    # Вкладка "Графики"
-    graphs_frame = tk.Frame(tabs[2])
-    graphs_frame.pack(fill='both', expand=1)
+    def upload_file(e: ft.FilePickerResultEvent):
+        load_csv(e.files[0].path)
 
-    graphs_tabs = ttk.Notebook(graphs_frame)
-    graphs_tabs.pack(expand=1, fill='both')
-    tab_control.bind("<<NotebookTabChanged>>", show_graphs)
+        dataframe_name.value = e.files[0].name
+        dataframe_name.update()
 
-    root.mainloop()
+    # endregion
+
+    # region [Summary Page]
+    # Summary page ===========
+    def get_summary_rows(data: dict):
+        rows = []
+        for i in data.keys():
+            rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(i)), ft.DataCell(ft.Text(data[i]))]))
+
+        return rows
+
+    def open_summary_page(e):
+        page_reload()
+
+        if data_is_loaded():
+            summary_data = summary()
+            table = ft.DataTable(
+                columns=[
+                    ft.DataColumn(ft.Text("Наименование")),
+                    ft.DataColumn(ft.Text("Значение"))
+                ],
+                rows=get_summary_rows(summary_data),
+                border=ft.border.all(2, 'black')
+            )
+
+            lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
+            lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=lambda _: set_data(None)))
+            lv.controls.append(table)
+
+            page.add(lv)
+
+        page.update()
+
+    # endregion
+
+    # Graphs page ===========
+    def open_graphs_page(e):
+        page.update()
+
+    # Corr page ===========
+    def open_corr_page(e):
+        page.update()
+
+    def page_reload():
+        page.clean()
+
+        page.add(
+            ft.Row(
+                [
+                    ft.IconButton(ft.icons.HOME, icon_color='black', on_click=open_main_page),
+                    ft.IconButton(ft.icons.SUMMARIZE, icon_color='black', on_click=open_summary_page),
+                    ft.IconButton(ft.icons.AUTO_GRAPH, icon_color='black', on_click=open_graphs_page),
+                    ft.IconButton(ft.icons.DATA_ARRAY, icon_color='black', on_click=open_corr_page)
+                ],
+            )
+        )
+
+        page.update()
+
+    page.add(
+        ft.Row(
+            [
+                ft.IconButton(ft.icons.HOME, icon_color='black', on_click=open_main_page),
+                ft.IconButton(ft.icons.SUMMARIZE, icon_color='black', on_click=open_summary_page),
+                ft.IconButton(ft.icons.AUTO_GRAPH, icon_color='black', on_click=open_graphs_page),
+                ft.IconButton(ft.icons.DATA_ARRAY, icon_color='black', on_click=open_corr_page)
+            ],
+        )
+    )
+
+
+ft.app(target=main)

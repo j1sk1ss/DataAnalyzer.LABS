@@ -16,7 +16,7 @@ def get_lists(dataframe):
     for i in range(len(dataframe.iloc[0])):
         lst = []
         for j in range(len(dataframe)):
-            lst.append(dataframe.iloc[j][i])
+            lst.append(dataframe.iloc[j].iloc[i])
 
         temp_list.append(lst)
 
