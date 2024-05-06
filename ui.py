@@ -39,7 +39,7 @@ def main(page: ft.Page):
         return df_rows
 
     def open_main_page(e):
-        page_reload()
+        page_reload(1)
         if not data_is_loaded():
             pick_files_dialog = ft.FilePicker(on_result=upload_file)
             upload_button = ft.IconButton(ft.icons.UPLOAD, on_click=lambda _: pick_files_dialog.pick_files(
@@ -90,7 +90,7 @@ def main(page: ft.Page):
         return rows
 
     def open_summary_page(e):
-        page_reload()
+        page_reload(2)
 
         if data_is_loaded():
             summary_data = summary()
@@ -119,16 +119,18 @@ def main(page: ft.Page):
     min_field = ft.TextField(hint_text="Нижний предел", value="0", label="Минимум")
     max_field = ft.TextField(hint_text="Верхний предел", value="100000000", label="Максимум")
 
-    def reload_graph_page():
-        page_reload()
-        button_headers = [ft.TextButton(x, style=ft.ButtonStyle(color='black'), on_click=draw_default_graph) for x in get_data().columns]
+    def reload_graph_page(page_number, row):
+        page_reload(3)
+        button_headers = [ft.TextButton(x, style=ft.ButtonStyle(color='grey' if (row == 1 and page_number == i) else 'black'),
+                                        on_click=draw_default_graph) for i, x in enumerate(get_data().columns)]
         page.add(
             ft.Row(
                 [*button_headers, ft.Text("Все данные")]
             )
         )
 
-        button_headers = [ft.TextButton(x, style=ft.ButtonStyle(color='black'), on_click=draw_freq_graph) for x in get_data().columns]
+        button_headers = [ft.TextButton(x, style=ft.ButtonStyle(color='grey' if (row == 2 and page_number == i) else 'black'),
+                                        on_click=draw_freq_graph) for i, x in enumerate(get_data().columns)]
         page.add(
             ft.Row(
                 [*button_headers, ft.Text("Частота")]
@@ -139,10 +141,10 @@ def main(page: ft.Page):
         )
 
     def draw_default_graph(e: flet_core.control_event.ControlEvent):
-        reload_graph_page()
-
         column_name = e.control.text
         column_data = []
+
+        reload_graph_page(list(get_data().columns).index(column_name), 1)
 
         column = get_data()[column_name]
         for i in range(len(column)):
@@ -188,11 +190,11 @@ def main(page: ft.Page):
         page.update()
 
     def draw_freq_graph(e: flet_core.control_event.ControlEvent):
-        reload_graph_page()
-
         data = get_data()
         column_name = e.control.text
         column = data[column_name]
+
+        reload_graph_page(list(get_data().columns).index(column_name), 2)
 
         value_counts = sorted(Counter(column).items(), key=lambda x: x[0])
 
@@ -241,7 +243,7 @@ def main(page: ft.Page):
         page.update()
 
     def open_graphs_page(e):
-        reload_graph_page()
+        reload_graph_page(1, 1)
         page.update()
 
     # endregion
@@ -250,7 +252,7 @@ def main(page: ft.Page):
     # Corr page ===========
 
     def draw_corr(e):
-        reload_corr_page()
+        reload_corr_page(1)
 
         corr_matrix = get_data().corr()
         fig, ax = plt.subplots()
@@ -272,7 +274,7 @@ def main(page: ft.Page):
         page.update()
 
     def draw_pcorr(e):
-        reload_corr_page()
+        reload_corr_page(2)
 
         pcorr_matrix = get_data().pcorr()
         fig, ax = plt.subplots()
@@ -293,11 +295,11 @@ def main(page: ft.Page):
 
         page.update()
 
-    def reload_corr_page():
-        page_reload()
+    def reload_corr_page(page_number):
+        page_reload(4)
         button_headers = [
-            ft.TextButton('Парная корреляция', style=ft.ButtonStyle(color='black'), on_click=draw_corr),
-            ft.TextButton('Частная корреляция', style=ft.ButtonStyle(color='black'), on_click=draw_pcorr)
+            ft.TextButton('Парная корреляция', style=ft.ButtonStyle(color='grey' if page_number == 1 else 'black'), on_click=draw_corr),
+            ft.TextButton('Частная корреляция', style=ft.ButtonStyle(color='grey' if page_number == 2 else 'black'), on_click=draw_pcorr)
         ]
 
         page.add(
@@ -307,28 +309,28 @@ def main(page: ft.Page):
         )
 
     def open_corr_page(e):
-        reload_corr_page()
+        reload_corr_page(1)
         page.update()
 
     # endregion
 
-    def page_reload():
+    def page_reload(page_number):
         page.controls.clear()
 
         page.add(
             ft.Row(
                 [
-                    ft.IconButton(ft.icons.HOME, icon_color='black', on_click=open_main_page),
-                    ft.IconButton(ft.icons.SUMMARIZE, icon_color='black', on_click=open_summary_page),
-                    ft.IconButton(ft.icons.AUTO_GRAPH, icon_color='black', on_click=open_graphs_page),
-                    ft.IconButton(ft.icons.DATA_ARRAY, icon_color='black', on_click=open_corr_page)
+                    ft.IconButton(ft.icons.HOME, icon_color='grey' if page_number == 1 else 'black', on_click=open_main_page),
+                    ft.IconButton(ft.icons.SUMMARIZE, icon_color='grey' if page_number == 2 else 'black', on_click=open_summary_page),
+                    ft.IconButton(ft.icons.AUTO_GRAPH, icon_color='grey' if page_number == 3 else 'black', on_click=open_graphs_page),
+                    ft.IconButton(ft.icons.DATA_ARRAY, icon_color='grey' if page_number == 4 else 'black', on_click=open_corr_page)
                 ],
             )
         )
 
         page.update()
 
-    page_reload()
+    page_reload(1)
 
 
 ft.app(target=main)
