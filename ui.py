@@ -9,17 +9,25 @@ import pingouin as pg
 from matplotlib import pyplot as plt
 
 from main import load_csv, data_is_loaded, get_data, set_data, summary
+from modules.data import Data
 
 
 def main(page: ft.Page):
     page.title = 'Cordell Data Analyzer'
     page.theme_mode = 'light'
     page.vertical_alignment = ft.MainAxisAlignment.START
+    page.window_resizable = False
 
     # region [Main Page]
     # Main page ===========
 
     dataframe_name = ft.Text('...', width=1200)
+    drop_column_name = ft.TextField(label='Удалить')
+
+    def drop_column(e):
+        set_data(Data(get_data().drop(columns=[drop_column_name.value], axis=1)))
+
+    drop_column_row = ft.Row([ft.IconButton(icon=ft.icons.DELETE, icon_color='black', on_click=drop_column), drop_column_name])
 
     def get_headers(df: pd.DataFrame) -> list:
         return [ft.DataColumn(ft.Text(header)) for header in df.columns]
@@ -50,11 +58,14 @@ def main(page: ft.Page):
             table = ft.DataTable(
                 columns=get_headers(get_data()),
                 rows=get_rows(get_data()),
-                border=ft.border.all(2, 'black')
+                border=ft.border.all(2, 'black'),
+                show_checkbox_column=True
             )
 
             lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
             lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=lambda _: set_data(None)))
+
+            lv.controls.append(drop_column_row)
             lv.controls.append(table)
 
             page.add(lv)

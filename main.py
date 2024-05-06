@@ -10,8 +10,6 @@ def load_csv(file_path):
     global dataframe
     if file_path:
         df = pd.read_csv(file_path)
-        df = df.drop(columns=['Star color', 'Spectral Class'], axis=1)
-
         dataframe = Data(df)
 
 
