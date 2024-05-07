@@ -9,7 +9,6 @@ import pingouin as pg
 from matplotlib import pyplot as plt
 
 from main import load_csv, data_is_loaded, get_data, set_data, summary
-from SampleRod import SampleRod
 from modules.data import Data
 
 
@@ -25,10 +24,14 @@ def main(page: ft.Page):
     dataframe_name = ft.Text('...', width=1200)
     drop_column_name = ft.TextField(label='Удалить')
 
-    def drop_column(e):
+    def drop_column(event):
         set_data(Data(get_data().drop(columns=[drop_column_name.value], axis=1)))
+        page_reload(1)
+        open_main_page(None)
 
-    drop_column_row = ft.Row([ft.IconButton(icon=ft.icons.DELETE, icon_color='black', on_click=drop_column), drop_column_name])
+    drop_column_row = ft.Row([ft.IconButton(
+        icon=ft.icons.DELETE, icon_color='black', on_click=drop_column), drop_column_name]
+    )
 
     def get_headers(df: pd.DataFrame) -> list:
         return [ft.DataColumn(ft.Text(header)) for header in df.columns]
@@ -39,7 +42,7 @@ def main(page: ft.Page):
             df_rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(row[header])) for header in df.columns]))
         return df_rows
 
-    def open_main_page(e):
+    def open_main_page(event):
         page_reload(1)
         if not data_is_loaded():
             pick_files_dialog = ft.FilePicker(on_result=upload_file)
@@ -49,9 +52,9 @@ def main(page: ft.Page):
 
             page.add(
                 ft.Row([
-                        upload_button, pick_files_dialog,
-                        dataframe_name
-                    ],
+                    upload_button, pick_files_dialog,
+                    dataframe_name
+                ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                 )
             )
@@ -59,11 +62,10 @@ def main(page: ft.Page):
             table = ft.DataTable(
                 columns=get_headers(get_data()),
                 rows=get_rows(get_data()),
-                border=ft.border.all(2, 'black'),
-                show_checkbox_column=True
+                border=ft.border.all(2, 'black')
             )
 
-            lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
+            lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=False)
             lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=lambda _: set_data(None)))
 
             lv.controls.append(drop_column_row)
@@ -79,18 +81,66 @@ def main(page: ft.Page):
         dataframe_name.value = e.files[0].name
         dataframe_name.update()
 
+        open_main_page(None)
+
     # endregion
 
     # region [Summary Page]
     # Summary page ===========
+
+    summary_data = {}
+
+    def get_full_info(event: flet_core.control_event.ControlEvent):
+        global summary_data
+
+        list_name = event.control.data
+
+        if isinstance(summary_data[list_name], dict):
+            data = "\n".join([f"{key}: {value}" for key, value in summary_data[list_name].items()])
+        else:
+            data = str(summary_data[list_name])
+
+        dlg = ft.AlertDialog(
+            title=ft.Text(data)
+        )
+
+        def close_dlg(e):
+            dlg_modal.open = False
+            page.update()
+
+        dlg_modal = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Please confirm"),
+            content=ft.Text("Do you really want to delete all those files?"),
+            actions=[
+                ft.TextButton("Yes", on_click=close_dlg),
+                ft.TextButton("No", on_click=close_dlg),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+            on_dismiss=lambda e: print("Modal dialog dismissed!"),
+        )
+
+        def open_dlg(e):
+            page.dialog = dlg
+            dlg.open = True
+            page.update()
+
+        open_dlg(None)
+
     def get_summary_rows(data: dict):
         rows = []
         for i in data.keys():
-            rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(i)), ft.DataCell(ft.Text(data[i]))]))
+            rows.append(ft.DataRow(
+                cells=[ft.DataCell(ft.Text(i)), ft.DataCell(ft.Text(
+                    'раскрыть список...' if (isinstance(data[i], dict) or isinstance(data[i], list))
+                    else 'раскрыть строку...' if len(str(data[i])) > 50 else data[i]
+                ), on_tap=get_full_info, data=i)]
+            ))
 
         return rows
 
-    def open_summary_page(e):
+    def open_summary_page(event):
+        global summary_data
         page_reload(2)
 
         if data_is_loaded():
@@ -104,7 +154,7 @@ def main(page: ft.Page):
                 border=ft.border.all(2, 'black')
             )
 
-            lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
+            lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=False)
             lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=lambda _: set_data(None)))
             lv.controls.append(table)
 
@@ -122,16 +172,19 @@ def main(page: ft.Page):
 
     def reload_graph_page(page_number, row):
         page_reload(3)
-        button_headers = [ft.TextButton(x, style=ft.ButtonStyle(color='grey' if (row == 1 and page_number == i) else 'black'),
-                                        on_click=draw_default_graph) for i, x in enumerate(get_data().columns)]
+        button_headers = [ft.TextButton(
+            x, style=ft.ButtonStyle(color='grey' if (row == 1 and page_number == i) else 'black'),
+            on_click=draw_default_graph
+        ) for i, x in enumerate(get_data().columns)]
         page.add(
             ft.Row(
                 [*button_headers, ft.Text("Все данные")]
             )
         )
 
-        button_headers = [ft.TextButton(x, style=ft.ButtonStyle(color='grey' if (row == 2 and page_number == i) else 'black'),
-                                        on_click=draw_freq_graph) for i, x in enumerate(get_data().columns)]
+        button_headers = [
+            ft.TextButton(x, style=ft.ButtonStyle(color='grey' if (row == 2 and page_number == i) else 'black'),
+                          on_click=draw_freq_graph) for i, x in enumerate(get_data().columns)]
         page.add(
             ft.Row(
                 [*button_headers, ft.Text("Частота")]
@@ -201,27 +254,26 @@ def main(page: ft.Page):
         value_counts = sorted(Counter(column).items(), key=lambda x: x[0])
         column_values = []
         for i in value_counts:
-            if int(min_field.value) < i[0] < int(max_field.value):
-                column_values.append(i[1])
+            column_values.append(i[1])
 
         chart_data = [ft.BarChartGroup(
             x=i,
             bar_rods=[
                 ft.BarChartRod(
-                    from_y=0,
+                    from_y=1,
                     to_y=column_values[i],
-                    width=10,
+                    width=6,
                     color=ft.colors.BLUE,
                     border_radius=0,
                 ),
             ],
-        ) for i in range(len(column_values))]
+        ) for i in range(len(column_values)) if int(min_field.value) < value_counts[i][0] < int(max_field.value)]
 
         bottom_axis = [
             ft.ChartAxisLabel(
-                value=x,
-                label=ft.Text(str(x), size=10, weight=ft.FontWeight.NORMAL),
-            ) for x in range(len(column_values))
+                value=value_counts[x][0],
+                label=ft.Text(str(value_counts[x][0]), size=10, weight=ft.FontWeight.NORMAL),
+            ) for x in range(0, len(value_counts), 5)
         ]
 
         left_axis = [
@@ -240,7 +292,7 @@ def main(page: ft.Page):
         ))
         page.update()
 
-    def open_graphs_page(e):
+    def open_graphs_page(event):
         reload_graph_page(1, 1)
         page.update()
 
@@ -249,7 +301,7 @@ def main(page: ft.Page):
     # region [Corr Page]
     # Corr page ===========
 
-    def draw_corr(e):
+    def draw_corr(event):
         reload_corr_page(1)
 
         corr_matrix = get_data().corr()
@@ -271,7 +323,7 @@ def main(page: ft.Page):
 
         page.update()
 
-    def draw_pcorr(e):
+    def draw_pcorr(event):
         reload_corr_page(2)
 
         pcorr_matrix = get_data().pcorr()
@@ -296,8 +348,10 @@ def main(page: ft.Page):
     def reload_corr_page(page_number):
         page_reload(4)
         button_headers = [
-            ft.TextButton('Парная корреляция', style=ft.ButtonStyle(color='grey' if page_number == 1 else 'black'), on_click=draw_corr),
-            ft.TextButton('Частная корреляция', style=ft.ButtonStyle(color='grey' if page_number == 2 else 'black'), on_click=draw_pcorr)
+            ft.TextButton('Парная корреляция', style=ft.ButtonStyle(color='grey' if page_number == 1 else 'black'),
+                          on_click=draw_corr),
+            ft.TextButton('Частная корреляция', style=ft.ButtonStyle(color='grey' if page_number == 2 else 'black'),
+                          on_click=draw_pcorr)
         ]
 
         page.add(
@@ -306,7 +360,7 @@ def main(page: ft.Page):
             )
         )
 
-    def open_corr_page(e):
+    def open_corr_page(event):
         reload_corr_page(1)
         page.update()
 
@@ -318,10 +372,14 @@ def main(page: ft.Page):
         page.add(
             ft.Row(
                 [
-                    ft.IconButton(ft.icons.HOME, icon_color='grey' if page_number == 1 else 'black', on_click=open_main_page),
-                    ft.IconButton(ft.icons.SUMMARIZE, icon_color='grey' if page_number == 2 else 'black', on_click=open_summary_page),
-                    ft.IconButton(ft.icons.AUTO_GRAPH, icon_color='grey' if page_number == 3 else 'black', on_click=open_graphs_page),
-                    ft.IconButton(ft.icons.DATA_ARRAY, icon_color='grey' if page_number == 4 else 'black', on_click=open_corr_page)
+                    ft.IconButton(ft.icons.HOME, icon_color='grey' if page_number == 1 else 'black',
+                                  on_click=open_main_page),
+                    ft.IconButton(ft.icons.SUMMARIZE, icon_color='grey' if page_number == 2 else 'black',
+                                  on_click=open_summary_page),
+                    ft.IconButton(ft.icons.AUTO_GRAPH, icon_color='grey' if page_number == 3 else 'black',
+                                  on_click=open_graphs_page),
+                    ft.IconButton(ft.icons.DATA_ARRAY, icon_color='grey' if page_number == 4 else 'black',
+                                  on_click=open_corr_page)
                 ],
             )
         )
