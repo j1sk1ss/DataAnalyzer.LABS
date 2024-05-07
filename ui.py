@@ -9,6 +9,7 @@ import pingouin as pg
 from matplotlib import pyplot as plt
 
 from main import load_csv, data_is_loaded, get_data, set_data, summary
+from SampleRod import SampleRod
 from modules.data import Data
 
 
@@ -146,6 +147,21 @@ def main(page: ft.Page):
 
         reload_graph_page(list(get_data().columns).index(column_name), 1)
 
+        bottom_axis = [
+            ft.ChartAxisLabel(
+                value=x,
+                label=ft.Text(str(x), size=10, weight=ft.FontWeight.NORMAL),
+            ) for x in range(len(column_data))
+        ]
+
+        left_axis = [
+            ft.ChartAxisLabel(
+                value=x,
+                label=ft.Text(str(x), size=10, weight=ft.FontWeight.NORMAL),
+            ) for x in range(int(max(get_data()[column_name])), 0,
+                             max(int(max(get_data()[column_name]) / 10000), 1))
+        ]
+
         column = get_data()[column_name]
         for i in range(len(column)):
             if int(min_field.value) < i < int(max_field.value):
@@ -158,20 +174,6 @@ def main(page: ft.Page):
             curved=False,
             stroke_cap_round=True,
         )]
-
-        bottom_axis = [
-            ft.ChartAxisLabel(
-                value=x,
-                label=ft.Text(str(x), size=10, weight=ft.FontWeight.NORMAL),
-            ) for x in range(len(column_data))
-        ]
-
-        left_axis = [
-            ft.ChartAxisLabel(
-                value=x,
-                label=ft.Text(str(x), size=10, weight=ft.FontWeight.NORMAL),
-            ) for x in range(int(max(get_data()[column_name])), 0, max(int(max(get_data()[column_name]) / 10000), 1))
-        ]
 
         chart = ft.LineChart(
             data_series=chart_data,
@@ -197,49 +199,45 @@ def main(page: ft.Page):
         reload_graph_page(list(get_data().columns).index(column_name), 2)
 
         value_counts = sorted(Counter(column).items(), key=lambda x: x[0])
+        column_values = []
+        for i in value_counts:
+            if int(min_field.value) < i[0] < int(max_field.value):
+                column_values.append(i[1])
 
-        column_data = []
-        for value, count in value_counts:
-            if int(min_field.value) < value < int(max_field.value):
-                column_data.append(ft.LineChartDataPoint(value, count))
+        chart_data = [ft.BarChartGroup(
+            x=i,
+            bar_rods=[
+                ft.BarChartRod(
+                    from_y=0,
+                    to_y=column_values[i],
+                    width=10,
+                    color=ft.colors.BLUE,
+                    border_radius=0,
+                ),
+            ],
+        ) for i in range(len(column_values))]
 
-        chart_data = [ft.LineChartData(
-            data_points=column_data,
-            stroke_width=2,
-            color=ft.colors.LIGHT_GREEN,
-            curved=False,
-            stroke_cap_round=True
-        )]
+        bottom_axis = [
+            ft.ChartAxisLabel(
+                value=x,
+                label=ft.Text(str(x), size=10, weight=ft.FontWeight.NORMAL),
+            ) for x in range(len(column_values))
+        ]
 
-        bottom_axis = []
-        left_axis = []
-        for value, count in value_counts:
-            bottom_axis.append(
-                ft.ChartAxisLabel(
-                    value=value,
-                    label=ft.Text(str(value), size=10, weight=ft.FontWeight.NORMAL),
-                ))
+        left_axis = [
+            ft.ChartAxisLabel(
+                value=x,
+                label=ft.Text(str(x), size=10, weight=ft.FontWeight.NORMAL),
+            ) for x in range(int(max(get_data()[column_name])), 0,
+                             max(int(max(get_data()[column_name]) / 10000), 1))
+        ]
 
-            left_axis.append(
-                ft.ChartAxisLabel(
-                    value=count,
-                    label=ft.Text(str(count), size=10, weight=ft.FontWeight.NORMAL),
-                ))
-
-        chart = ft.LineChart(
-            data_series=chart_data,
-            left_axis=ft.ChartAxis(
-                labels=left_axis
-            ),
-            bottom_axis=ft.ChartAxis(
-                labels=bottom_axis
-            ),
-            border=ft.Border(
-                bottom=ft.BorderSide(4, ft.colors.with_opacity(0.5, ft.colors.ON_SURFACE))
-            )
-        )
-
-        page.add(chart)
+        page.add(ft.BarChart(
+            bar_groups=chart_data,
+            border=ft.border.all(1, ft.colors.GREY_400),
+            left_axis=ft.ChartAxis(labels=left_axis),
+            bottom_axis=ft.ChartAxis(labels=bottom_axis)
+        ))
         page.update()
 
     def open_graphs_page(e):
