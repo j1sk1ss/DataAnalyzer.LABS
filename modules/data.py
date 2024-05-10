@@ -66,6 +66,8 @@ class Data:
         for i in range(len(self.data_lists)):
             answer[self.data_names[i]] = statistics.mode(self.data_lists[i])
 
+        return answer
+
     def get_scope(self):
         answer = {}
         for i in range(len(self.data_lists)):
@@ -121,6 +123,8 @@ class Data:
         answer = {}
         for i in range(len(self.data_lists)):
             answer[self.data_names[i]] = (std[i] / average[i]) * 100.0
+
+        return answer
 
     def get_quartile(self):
         answer = {}

@@ -42,6 +42,11 @@ def main(page: ft.Page):
             df_rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(row[header])) for header in df.columns]))
         return df_rows
 
+    def close_dataframe():
+        set_data(None)
+        dataframe_name.value = '...'
+        open_main_page(None)
+
     def open_main_page(event):
         page_reload(1)
         if not data_is_loaded():
@@ -66,7 +71,7 @@ def main(page: ft.Page):
             )
 
             lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=False)
-            lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=lambda _: set_data(None)))
+            lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=lambda _: close_dataframe()))
 
             lv.controls.append(drop_column_row)
             lv.controls.append(table)
@@ -374,7 +379,7 @@ def main(page: ft.Page):
 
         page.update()
 
-    page_reload(1)
+    open_main_page(None)
 
 
 ft.app(target=main)
