@@ -94,30 +94,18 @@ def main(page: ft.Page):
         global summary_data
 
         list_name = event.control.data
-
         if isinstance(summary_data[list_name], dict):
+            for i in summary_data[list_name].keys():
+                if isinstance(summary_data[list_name][i], dict):
+                    summary_data[list_name][i] = \
+                        "\n".join([f"{key}: {value}" for key, value in summary_data[list_name][i].items()])
+
             data = "\n".join([f"{key}: {value}" for key, value in summary_data[list_name].items()])
         else:
             data = str(summary_data[list_name])
 
         dlg = ft.AlertDialog(
             title=ft.Text(data)
-        )
-
-        def close_dlg(e):
-            dlg_modal.open = False
-            page.update()
-
-        dlg_modal = ft.AlertDialog(
-            modal=True,
-            title=ft.Text("Please confirm"),
-            content=ft.Text("Do you really want to delete all those files?"),
-            actions=[
-                ft.TextButton("Yes", on_click=close_dlg),
-                ft.TextButton("No", on_click=close_dlg),
-            ],
-            actions_alignment=ft.MainAxisAlignment.END,
-            on_dismiss=lambda e: print("Modal dialog dismissed!"),
         )
 
         def open_dlg(e):
@@ -168,7 +156,7 @@ def main(page: ft.Page):
     # Graphs page ===========
 
     min_field = ft.TextField(hint_text="Нижний предел", value="0", label="Минимум")
-    max_field = ft.TextField(hint_text="Верхний предел", value="100000000", label="Максимум")
+    max_field = ft.TextField(hint_text="Верхний предел", value="1000000", label="Максимум")
 
     def reload_graph_page(page_number, row):
         page_reload(3)
