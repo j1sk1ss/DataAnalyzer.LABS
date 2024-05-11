@@ -1,5 +1,4 @@
 import flet as ft
-from events import Events
 
 
 class Menu:

@@ -3,7 +3,7 @@ import pandas as pd
 from modules.data import Data
 
 
-dataframe = None
+dataframe = Data(None)
 
 
 def load_csv(file_path):
@@ -14,7 +14,7 @@ def load_csv(file_path):
 
 
 def data_is_loaded():
-    return dataframe is not None
+    return dataframe.data_body is not None
 
 
 def get_graph(column):
@@ -22,7 +22,7 @@ def get_graph(column):
 
 
 def get_columns():
-    return dataframe.columns.values
+    return dataframe.data_body.columns.values
 
 
 def summary():
@@ -35,6 +35,10 @@ def predict(input_data: list):
 
 def get_data():
     return dataframe.data_body
+
+
+def get_dataframe():
+    return dataframe
 
 
 def set_data(data):

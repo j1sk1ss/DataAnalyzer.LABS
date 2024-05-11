@@ -4,7 +4,9 @@ import pandas as pd
 from data_process import data_is_loaded, load_csv, get_data, set_data
 from modules.data import Data
 from pages.page import Page
+from pages.page_constructors.corr_page import get_corr_page
 from pages.page_constructors.graphs_page import get_graphs_page
+from pages.page_constructors.reg_page import get_reg_page
 from pages.page_constructors.summary_page import get_summary_page
 
 
@@ -33,8 +35,22 @@ def get_main_page(page: Page):
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN
             ))
     else:
-        page.parent.pages[1] = get_summary_page(Page(page.body, []))
-        page.parent.pages[2] = get_graphs_page(Page(page.body, []))
+        new_sum_page = Page(page.body, [])
+        new_sum_page.set_parent(page.parent)
+        page.parent.pages[1] = get_summary_page(new_sum_page)
+
+        new_graphs_page = Page(page.body, [])
+        new_graphs_page.set_parent(page.parent)
+        page.parent.pages[2] = get_graphs_page(new_graphs_page)
+
+        new_corr_page = Page(page.body, [])
+        new_corr_page.set_parent(page.parent)
+        page.parent.pages[3] = get_corr_page(new_corr_page)
+
+        new_reg_page = Page(page.body, [])
+        new_reg_page.set_parent(page.parent)
+        page.parent.pages[4] = get_reg_page(new_reg_page)
+
         drop_column_name = ft.TextField(label='Удалить')
 
         def close_dataframe():

@@ -16,9 +16,15 @@ class Data:
     def __init__(self, dataframe):
         self.results = None
         self.model = None
-        self.data_body = dataframe
-        self.data_names = list(self.data_body.columns.values)
-        self.data_lists = get_lists(self.data_body)
+
+        if dataframe is not None:
+            self.data_body = dataframe
+            self.data_names = list(self.data_body.columns.values)
+            self.data_lists = get_lists(self.data_body)
+        else:
+            self.data_body = None
+            self.data_names = []
+            self.data_lists = [[]]
 
     def normalize(self):
         numeric_data_frame = self.data_body.apply(pd.to_numeric, errors='coerce')
@@ -220,7 +226,7 @@ class Data:
         return self.results.summary()
 
     def predict(self, input_data):
-        return self.results.predict(input)
+        return self.results.predict(input_data)
 
     def get_summary(self):
         try:

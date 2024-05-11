@@ -13,7 +13,9 @@ class Page:
         self.parent = parent
 
     def update(self, page: ft.Page):
-        self.body = page
+        if page is not None:
+            self.body = page
+
         if self.parent is not None:
             self.parent.update_page(self)
         else:
