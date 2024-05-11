@@ -2,158 +2,65 @@ from collections import Counter
 
 import flet as ft
 import flet_core.control_event
-import pandas as pd
 from flet.matplotlib_chart import MatplotlibChart
-import seaborn as sns
-import pingouin as pg
-from matplotlib import pyplot as plt
 
-from main import load_csv, data_is_loaded, get_data, set_data, summary
+from matplotlib import pyplot as plt
+import pingouin as pg
+import pandas as pd
+import seaborn as sns
+
+from data_process import load_csv, data_is_loaded, get_data, set_data, summary
 from modules.data import Data
+from pages.menu import Menu
+from pages.page import Page
+from pages.page_constructors.graphs_page import get_graphs_page
+from pages.page_constructors.main_page import get_main_page
+from pages.page_constructors.summary_page import get_summary_page
 
 
 def main(page: ft.Page):
+
+    # region [Startup settings]
     page.title = 'Cordell Data Analyzer'
     page.theme_mode = 'light'
     page.vertical_alignment = ft.MainAxisAlignment.START
+
+    page.window_width = 1200
+    page.window_height = 600
     page.window_resizable = False
+    # endregion
+
+    # region [Page bodies]
+    program = Menu(page, [
+        get_main_page(Page(page, [])), get_summary_page(Page(page, [])),
+        get_graphs_page(Page(page, []))
+    ],
+        ft.Row([
+            ft.IconButton(ft.icons.HOME, on_click=lambda _:program.show_page(0)),
+            ft.IconButton(ft.icons.SUMMARIZE, on_click=lambda _:program.show_page(1)),
+            ft.IconButton(ft.icons.AUTO_GRAPH, on_click=lambda _:program.show_page(2)),
+            ft.IconButton(ft.icons.DATA_ARRAY, on_click=lambda _:program.show_page(3)),
+            ft.IconButton(ft.icons.GRAPHIC_EQ, on_click=lambda _:program.show_page(4)),
+        ],
+    ))
+
+    # endregion
+
+    program.show_page(0)
 
     # region [Main Page]
     # Main page ===========
 
-    dataframe_name = ft.Text('...', width=1200)
-    drop_column_name = ft.TextField(label='Удалить')
-
-    def drop_column(event):
-        set_data(Data(get_data().drop(columns=[drop_column_name.value], axis=1)))
-        page_reload(1)
-        open_main_page(None)
-
-    drop_column_row = ft.Row([ft.IconButton(
-        icon=ft.icons.DELETE, icon_color='black', on_click=drop_column), drop_column_name]
-    )
-
-    def get_headers(df: pd.DataFrame) -> list:
-        return [ft.DataColumn(ft.Text(header)) for header in df.columns]
-
-    def get_rows(df: pd.DataFrame) -> list:
-        df_rows = []
-        for index, row in df.iterrows():
-            df_rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(row[header])) for header in df.columns]))
-        return df_rows
-
-    def close_dataframe():
-        set_data(None)
-        dataframe_name.value = '...'
-        open_main_page(None)
-
     def open_main_page(event):
-        page_reload(1)
-        if not data_is_loaded():
-            pick_files_dialog = ft.FilePicker(on_result=upload_file)
-            upload_button = ft.IconButton(ft.icons.UPLOAD, on_click=lambda _: pick_files_dialog.pick_files(
-                allow_multiple=False
-            ), icon_color='black')
-
-            page.add(
-                ft.Row([
-                    upload_button, pick_files_dialog,
-                    dataframe_name
-                ],
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN
-                )
-            )
-        else:
-            table = ft.DataTable(
-                columns=get_headers(get_data()),
-                rows=get_rows(get_data()),
-                border=ft.border.all(2, 'black')
-            )
-
-            lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=False)
-            lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=lambda _: close_dataframe()))
-
-            lv.controls.append(drop_column_row)
-            lv.controls.append(table)
-
-            page.add(lv)
-
-        page.update()
-
-    def upload_file(e: ft.FilePickerResultEvent):
-        load_csv(e.files[0].path)
-
-        dataframe_name.value = e.files[0].name
-        dataframe_name.update()
-
-        open_main_page(None)
+        return
 
     # endregion
 
     # region [Summary Page]
     # Summary page ===========
 
-    summary_data = {}
-
-    def get_full_info(event: flet_core.control_event.ControlEvent):
-        global summary_data
-
-        list_name = event.control.data
-        if isinstance(summary_data[list_name], dict):
-            for i in summary_data[list_name].keys():
-                if isinstance(summary_data[list_name][i], dict):
-                    summary_data[list_name][i] = \
-                        "\n".join([f"{key}: {value}" for key, value in summary_data[list_name][i].items()])
-
-            data = "\n".join([f"{key}: {value}" for key, value in summary_data[list_name].items()])
-        else:
-            data = str(summary_data[list_name])
-
-        dlg = ft.AlertDialog(
-            title=ft.Text(data)
-        )
-
-        def open_dlg(e):
-            page.dialog = dlg
-            dlg.open = True
-            page.update()
-
-        open_dlg(None)
-
-    def get_summary_rows(data: dict):
-        rows = []
-        for i in data.keys():
-            rows.append(ft.DataRow(
-                cells=[ft.DataCell(ft.Text(i)), ft.DataCell(ft.Text(
-                    'раскрыть список...' if (isinstance(data[i], dict) or isinstance(data[i], list))
-                    else 'раскрыть строку...' if len(str(data[i])) > 50 else data[i]
-                ), on_tap=get_full_info, data=i)]
-            ))
-
-        return rows
-
     def open_summary_page(event):
-        global summary_data
-        page_reload(2)
-
-        if data_is_loaded():
-            summary_data = summary()
-            table = ft.DataTable(
-                columns=[
-                    ft.DataColumn(ft.Text("Наименование")),
-                    ft.DataColumn(ft.Text("Значение"))
-                ],
-                rows=get_summary_rows(summary_data),
-                border=ft.border.all(2, 'black')
-            )
-
-            lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=False)
-            lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=lambda _: set_data(None)))
-            lv.controls.append(table)
-
-            page.add(lv)
-
-        page.update()
+        return
 
     # endregion
 
@@ -286,6 +193,7 @@ def main(page: ft.Page):
         page.update()
 
     def open_graphs_page(event):
+        return
         reload_graph_page(1, 1)
         page.update()
 
@@ -359,6 +267,11 @@ def main(page: ft.Page):
 
     # endregion
 
+    def open_regression_page(event):
+        page_reload(5)
+
+        page.update()
+
     def page_reload(page_number):
         page.controls.clear()
 
@@ -372,14 +285,16 @@ def main(page: ft.Page):
                     ft.IconButton(ft.icons.AUTO_GRAPH, icon_color='grey' if page_number == 3 else 'black',
                                   on_click=open_graphs_page),
                     ft.IconButton(ft.icons.DATA_ARRAY, icon_color='grey' if page_number == 4 else 'black',
-                                  on_click=open_corr_page)
+                                  on_click=open_corr_page),
+                    ft.IconButton(ft.icons.GRAPHIC_EQ, icon_color='grey' if page_number == 5 else 'black',
+                                  on_click=open_regression_page),
                 ],
             )
         )
 
         page.update()
 
-    open_main_page(None)
+    # open_main_page(None)
 
 
 ft.app(target=main)

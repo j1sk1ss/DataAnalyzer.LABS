@@ -223,29 +223,34 @@ class Data:
         return self.results.predict(input)
 
     def get_summary(self):
-        power = self.get_power()
-        average = list(self.get_average(power).values())
-        std = self.get_standard_deviation(average, power)
-        first_std = []
-        for i in list(std.values()):
-            first_std.append(i['Первая формула стандартного отклонения'])
+        try:
+            power = self.get_power()
+            average = list(self.get_average(power).values())
+            std = self.get_standard_deviation(average, power)
+            first_std = []
+            for i in list(std.values()):
+                first_std.append(i['Первая формула стандартного отклонения'])
 
-        return {
-            'Мощность выборки': power,
-            'Выборочное среднее': self.get_sample_mean(power),
-            'Медиана': self.get_median(),
-            'Мода': self.get_mode(),
-            'Размах варианции': self.get_scope(),
-            'Дисперсия': self.get_dispersion(average, power),
-            'Стандартное отклонения': self.get_standard_deviation(average, power),
-            'Коэффициент вариации': self.get_variation(first_std, average),
-            'Верхний и нижний квартиль': self.get_quartile(),
-            'Коэффициент эксцесса': self.get_kurtosis(),
-            'Коэффициент асимметрии': self.get_asymmetry(),
-            'Перцентиль (40 & 80)': self.get_percentile([40, 80]),
-            'Интервальное оценивание': self.get_interval_estimation(),
-            'Нормальность Хи-Квадрат Пирсона': self.get_chisquare_normal(),
-            'Нормальность Шапиро-Уилка': self.get_shapiro_normal(),
-            'Коэффициент регрессии': self.get_regression_coef('Luminosity(L/Lo)'),
-            'Данные регрессии': self.fit_model('Luminosity(L/Lo)')
-        }
+            return {
+                'Мощность выборки': power,
+                'Выборочное среднее': self.get_sample_mean(power),
+                'Медиана': self.get_median(),
+                'Мода': self.get_mode(),
+                'Размах варианции': self.get_scope(),
+                'Дисперсия': self.get_dispersion(average, power),
+                'Стандартное отклонения': self.get_standard_deviation(average, power),
+                'Коэффициент вариации': self.get_variation(first_std, average),
+                'Верхний и нижний квартиль': self.get_quartile(),
+                'Коэффициент эксцесса': self.get_kurtosis(),
+                'Коэффициент асимметрии': self.get_asymmetry(),
+                'Перцентиль (40 & 80)': self.get_percentile([40, 80]),
+                'Интервальное оценивание': self.get_interval_estimation(),
+                'Нормальность Хи-Квадрат Пирсона': self.get_chisquare_normal(),
+                'Нормальность Шапиро-Уилка': self.get_shapiro_normal(),
+                'Коэффициент регрессии': self.get_regression_coef('Luminosity(L/Lo)'),
+                'Данные регрессии': self.fit_model('Luminosity(L/Lo)')
+            }
+        except ValueError:
+            return {
+                'Ошибка': 101
+            }
