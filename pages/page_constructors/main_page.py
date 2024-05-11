@@ -1,8 +1,9 @@
 import flet as ft
 import pandas as pd
 
-from data_process import data_is_loaded, load_csv, get_data, set_data
+from data_process import data_is_loaded, load_csv, get_data, set_data, get_dataframe
 from modules.data import Data
+
 from pages.page import Page
 from pages.page_constructors.corr_page import get_corr_page
 from pages.page_constructors.graphs_page import get_graphs_page
@@ -53,7 +54,11 @@ def get_main_page(page: Page):
 
         drop_column_name = ft.TextField(label='Удалить')
 
-        def close_dataframe():
+        def normalize_dataframe(event):
+            get_dataframe().normalize()
+            page.update(get_main_page(page).body)
+
+        def close_dataframe(event):
             set_data(None)
             dataframe_name.value = '...'
             page.update(get_main_page(page).body)
@@ -77,14 +82,18 @@ def get_main_page(page: Page):
             border=ft.border.all(2, 'black')
         )
 
-        drop_column_row = ft.Row([ft.IconButton(
-            icon=ft.icons.DELETE, icon_color='black', on_click=drop_column), drop_column_name]
+        drop_column_row = ft.Row(
+            [
+                ft.IconButton(icon=ft.icons.DELETE, icon_color='black', on_click=drop_column),
+                drop_column_name
+            ]
         )
 
         lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=False)
-        lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=lambda _: close_dataframe()))
+        lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=close_dataframe))
 
         lv.controls.append(drop_column_row)
+        lv.controls.append(ft.Row([ft.TextButton('Нормализовать', style=ft.ButtonStyle(color='black'), on_click=normalize_dataframe)]))
         lv.controls.append(table)
 
         page.add_control(lv)

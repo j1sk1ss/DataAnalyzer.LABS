@@ -2,11 +2,8 @@ from collections import Counter
 
 import flet as ft
 import flet_core
-import pandas as pd
 
-from data_process import data_is_loaded, load_csv, get_data, set_data, summary
-from modules.data import Data
-from pages.menu import Menu
+from data_process import data_is_loaded, get_data
 from pages.page import Page
 
 

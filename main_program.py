@@ -40,4 +40,4 @@ def main(page: ft.Page):
     program.show_page(0)
 
 
-ft.app(target=main)
+ft.app(target=main, assets_dir="assets")

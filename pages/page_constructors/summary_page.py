@@ -1,9 +1,7 @@
 import flet as ft
 import flet_core
-import pandas as pd
 
-from data_process import data_is_loaded, load_csv, get_data, set_data, summary
-from modules.data import Data
+from data_process import data_is_loaded, summary
 from pages.page import Page
 
 
@@ -59,7 +57,6 @@ def get_summary_page(page: Page):
         )
 
         lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=False)
-        lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=lambda _: set_data(None)))
         lv.controls.append(table)
 
         page.add_control(lv)

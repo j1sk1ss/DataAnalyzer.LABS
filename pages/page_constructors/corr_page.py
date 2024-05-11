@@ -2,12 +2,15 @@ import flet as ft
 from flet_core.matplotlib_chart import MatplotlibChart
 
 from matplotlib import pyplot as plt
+import matplotlib
+
 import pingouin as pg
 import pandas as pd
 import seaborn as sns
 
 from data_process import get_data, data_is_loaded
 from pages.page import Page
+matplotlib.use('agg')
 
 
 def reload_corr_page(page: Page, page_number):
