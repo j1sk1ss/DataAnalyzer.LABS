@@ -55,6 +55,17 @@ def get_reg_page(page: Page):
                 )
             ]
 
+            page.add_control(ft.Row([
+                ft.Container(
+                    content=ft.Text(value="Прогноз против реальности"),
+                    alignment=ft.alignment.center,
+                    width=1200,
+                    height=60,
+                    bgcolor=ft.colors.GREY_50,
+                    border_radius=ft.border_radius.all(5),
+                )
+            ]))
+
             page.add_control(
                 ft.LineChart(
                     data_series=chart_data,
