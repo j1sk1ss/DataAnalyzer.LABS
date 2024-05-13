@@ -16,6 +16,7 @@ class Data:
     def __init__(self, dataframe):
         self.results = None
         self.model = None
+        self.target = 'Luminosity(L/Lo)'
 
         if dataframe is not None:
             self.data_body = dataframe
@@ -253,8 +254,8 @@ class Data:
                 'Интервальное оценивание': self.get_interval_estimation(),
                 'Нормальность Хи-Квадрат Пирсона': self.get_chisquare_normal(),
                 'Нормальность Шапиро-Уилка': self.get_shapiro_normal(),
-                'Коэффициент регрессии': self.get_regression_coef('Luminosity(L/Lo)'),
-                'Данные регрессии': self.fit_model('Luminosity(L/Lo)')
+                'Коэффициент регрессии': self.get_regression_coef(self.target),
+                'Данные регрессии': self.fit_model(self.target)
             }
         except ValueError:
             return {

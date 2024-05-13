@@ -14,6 +14,9 @@ def load_csv(file_path):
 
 
 def data_is_loaded():
+    if dataframe is None:
+        return False
+
     return dataframe.data_body is not None
 
 
@@ -44,3 +47,13 @@ def get_dataframe():
 def set_data(data):
     global dataframe
     dataframe = data
+
+
+def set_target(target):
+    global dataframe
+    dataframe.target = target
+
+
+def get_target():
+    global dataframe
+    return dataframe.target

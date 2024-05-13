@@ -28,11 +28,11 @@ def main(page: ft.Page):
         get_reg_page(Page(page, []))
     ],
         ft.Row([
-            ft.IconButton(ft.icons.HOME, on_click=lambda _:program.show_page(0)),
-            ft.IconButton(ft.icons.SUMMARIZE, on_click=lambda _:program.show_page(1)),
-            ft.IconButton(ft.icons.AUTO_GRAPH, on_click=lambda _:program.show_page(2)),
-            ft.IconButton(ft.icons.DATA_ARRAY, on_click=lambda _:program.show_page(3)),
-            ft.IconButton(ft.icons.GRAPHIC_EQ, on_click=lambda _:program.show_page(4)),
+            ft.IconButton(ft.icons.HOME, on_click=lambda _:program.show_page(0), tooltip='Главная'),
+            ft.IconButton(ft.icons.SUMMARIZE, on_click=lambda _:program.show_page(1), tooltip='Выборочная статистика'),
+            ft.IconButton(ft.icons.AUTO_GRAPH, on_click=lambda _:program.show_page(2), tooltip='Графики'),
+            ft.IconButton(ft.icons.DATA_ARRAY, on_click=lambda _:program.show_page(3), tooltip='Корреляция'),
+            ft.IconButton(ft.icons.GRAPHIC_EQ, on_click=lambda _:program.show_page(4), tooltip='Регрессионный анализ'),
         ],
     ))
     # endregion

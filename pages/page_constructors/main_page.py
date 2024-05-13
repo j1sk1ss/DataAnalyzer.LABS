@@ -1,7 +1,8 @@
 import flet as ft
+import flet_core
 import pandas as pd
 
-from data_process import data_is_loaded, load_csv, get_data, set_data, get_dataframe
+from data_process import data_is_loaded, load_csv, get_data, set_data, get_dataframe, set_target, get_target, summary
 from modules.data import Data
 
 from pages.page import Page
@@ -25,8 +26,10 @@ def get_main_page(page: Page):
 
         pick_files_dialog = ft.FilePicker(on_result=upload_file)
         upload_button = ft.IconButton(ft.icons.UPLOAD, on_click=lambda _: pick_files_dialog.pick_files(
-            allow_multiple=False
-        ), icon_color='black')
+            allow_multiple=False,
+            allowed_extensions=['csv'],
+            dialog_title='Select dataset'
+        ), icon_color='black', tooltip='Загрузить')
 
         page.add_control(
             ft.Row([
@@ -64,17 +67,70 @@ def get_main_page(page: Page):
             page.update(get_main_page(page).body)
 
         def get_headers(df: pd.DataFrame) -> list:
-            return [ft.DataColumn(ft.Text(header)) for header in df.columns]
+            return [ft.DataColumn(
+                ft.Text(header + f'\n{"Цель" if header is get_target() else ""}')
+            ) for header in df.columns]
+
+        def reload_data(event: flet_core.control_event.ControlEvent):
+            set_target(event.control.data)
+
+            sum_page = Page(page.body, [])
+            sum_page.set_parent(page.parent)
+            page.parent.pages[1] = get_summary_page(sum_page)
+
+            reg_page = Page(page.body, [])
+            reg_page.set_parent(page.parent)
+            page.parent.pages[4] = get_reg_page(reg_page)
+
+            page.update(get_main_page(page).body)
 
         def get_rows(df: pd.DataFrame) -> list:
             df_rows = []
             for index, row in df.iterrows():
-                df_rows.append(ft.DataRow(cells=[ft.DataCell(ft.Text(row[header])) for header in df.columns]))
+                df_rows.append(
+                    ft.DataRow(
+                        cells=[
+                            ft.DataCell(
+                                ft.Text(row[header]), data=header, on_tap=reload_data
+                            ) for header in df.columns
+                        ]
+                    )
+                )
+
             return df_rows
 
         def drop_column(event):
             set_data(Data(get_data().drop(columns=[drop_column_name.value], axis=1)))
             page.update(get_main_page(page).body)
+
+        save_data = ""
+
+        def save_file(event: ft.FilePickerResultEvent):
+            global save_data
+            path = event.path
+            if path:
+                try:
+                    if save_data == "data":
+                        get_dataframe().data_body.to_csv(path)
+                        return
+
+                    with open(path, 'w', encoding='utf-8') as file:
+                        file.write(save_data)
+                except Exception as e:
+                    print(f'Save error [{e}]')
+
+            return 0
+
+        save_dialog = ft.FilePicker(on_result=save_file)
+
+        def save_file_dialog(event):
+            global save_data
+            if event.control.data == 'data':
+                save_data = "data"
+            else:
+                save_data = str(summary())
+
+            save_dialog.save_file()
 
         table = ft.DataTable(
             columns=get_headers(get_data()),
@@ -84,18 +140,27 @@ def get_main_page(page: Page):
 
         drop_column_row = ft.Row(
             [
-                ft.IconButton(icon=ft.icons.DELETE, icon_color='black', on_click=drop_column),
+                ft.IconButton(icon=ft.icons.DELETE, icon_color='black', on_click=drop_column, tooltip='Удалить'),
                 drop_column_name
             ]
         )
 
         lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=False)
-        lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=close_dataframe))
+        lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=close_dataframe, tooltip='Закрыть'))
 
         lv.controls.append(drop_column_row)
-        lv.controls.append(ft.Row([ft.TextButton('Нормализовать', style=ft.ButtonStyle(color='black'), on_click=normalize_dataframe)]))
+        lv.controls.append(
+            ft.Row(
+                [
+                    ft.TextButton('Нормализовать', style=ft.ButtonStyle(color='black'), on_click=normalize_dataframe),
+                    ft.TextButton('Сохранить датасет', style=ft.ButtonStyle(color='black'), on_click=save_file_dialog, data='data'),
+                    ft.TextButton('Сохранить отчёт', style=ft.ButtonStyle(color='black'), on_click=save_file_dialog, data='report')
+                ]
+            )
+        )
         lv.controls.append(table)
 
+        page.body.overlay.append(save_dialog)
         page.add_control(lv)
 
     return page

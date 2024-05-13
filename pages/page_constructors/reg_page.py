@@ -1,6 +1,6 @@
 import flet as ft
 
-from data_process import data_is_loaded, get_dataframe
+from data_process import data_is_loaded, get_dataframe, get_target
 from pages.page import Page
 
 
@@ -13,10 +13,10 @@ def get_reg_page(page: Page):
             edata = []
 
             dataframe = get_dataframe()
-            predicted = dataframe.data_body.drop(columns=['Luminosity(L/Lo)'], axis=1).to_numpy()
+            predicted = dataframe.data_body.drop(columns=[get_target()], axis=1).to_numpy()
             predicted_output = dataframe.predict(predicted)
 
-            expected_output = list(dataframe.data_body['Luminosity(L/Lo)'])
+            expected_output = list(dataframe.data_body[get_target()])
 
             bottom_axis = [
                 ft.ChartAxisLabel(
@@ -57,7 +57,7 @@ def get_reg_page(page: Page):
 
             page.add_control(ft.Row([
                 ft.Container(
-                    content=ft.Text(value="Прогноз против реальности"),
+                    content=ft.Text(value=f"Прогноз {get_target()} против реальности"),
                     alignment=ft.alignment.center,
                     width=1200,
                     height=60,

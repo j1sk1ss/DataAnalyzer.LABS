@@ -24,9 +24,21 @@ class Menu:
             else:
                 self.navigation.controls[i].icon_color = 'black'
 
-        self.body.add(self.navigation)
+        self.body.add(
+            ft.Container(
+                    content=self.navigation,
+                    alignment=ft.alignment.center,
+                    width=1200,
+                    height=60,
+                    bgcolor=ft.colors.BLUE_50,
+                    border_radius=ft.border_radius.all(5),
+                )
+        )
 
-        for c in self.pages[index].body_components:
-            self.body.add(c)
+        try:
+            for c in self.pages[index].body_components:
+                self.body.add(c)
+        except AttributeError:
+            print('NoneType')
 
         self.body.update()
