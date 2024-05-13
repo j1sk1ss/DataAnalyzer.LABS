@@ -7,6 +7,9 @@ import scipy.stats as sps
 from scipy.stats import shapiro
 from scipy.stats import chisquare
 
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error
+
 import statsmodels.api as sm
 
 from modules.common import get_lists, get_dispersion
@@ -219,12 +222,32 @@ class Data:
 
     def fit_model(self, output_name):
         input_data = self.data_body.drop(columns=[output_name], axis=1)
-        output_data = self.data_body.filter(items=[output_name])
-        
-        self.model = sm.OLS(output_data, input_data)
-        self.results = self.model.fit()
+        output_data = self.data_body[output_name]
 
-        return self.results.summary()
+        self.model = LinearRegression()
+        self.results = self.model.fit(input_data, output_data)
+
+        coefficients = self.model.coef_
+        intercept = self.model.intercept_
+
+        equation_text = f"{output_name} = {intercept:.2f}"
+        for variable, coefficient in zip(input_data.columns, coefficients):
+            equation_text += f" + {coefficient:.2f} * {variable}"
+
+        r_squared = self.model.score(input_data, output_data)
+        mean_abs_error = mean_absolute_error(output_data, self.model.predict(input_data))
+
+        n = len(output_data)
+        p = input_data.shape[1]
+        f_statistic = (r_squared / (1 - r_squared)) * ((n - p - 1) / p)
+        p_value = 1 - sps.norm.cdf(f_statistic, p, n - p - 1)
+
+        return {
+            'R^2': r_squared,
+            'Средняя ошибка аппроксимации': mean_abs_error,
+            'Критерий Фишера': p_value,
+            'Уравнение': equation_text
+        }
 
     def predict(self, input_data):
         return self.results.predict(input_data)

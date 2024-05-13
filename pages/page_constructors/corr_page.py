@@ -1,4 +1,5 @@
 import flet as ft
+import numpy as np
 from flet_core.matplotlib_chart import MatplotlibChart
 
 from matplotlib import pyplot as plt
@@ -16,59 +17,77 @@ matplotlib.use('agg')
 def reload_corr_page(page: Page, page_number):
     page.clean_controls()
 
+    def show_matrix(matrix, name):
+        fig, ax = plt.subplots()
+        im = ax.imshow(matrix, cmap='hot', interpolation='nearest')
+        fig.colorbar(im)
+
+        ax.set_xticks(range(len(matrix.columns)))
+        ax.set_yticks(range(len(matrix.index)))
+
+        ax.set_xticklabels(matrix.columns)
+        ax.set_yticklabels(matrix.index)
+
+        ax.set_xlabel('X-axis')
+        ax.set_ylabel('Y-axis')
+        ax.set_title(name)
+
+        for i in range(len(matrix.index)):
+            for j in range(len(matrix.columns)):
+                ax.text(j, i, f'{matrix.iloc[i, j]:.2f}', ha='center', va='center', color='black')
+
+        page.add_control(MatplotlibChart(fig, expand=True))
+        page.update(None)
+
     def draw_corr(event):
         try:
             reload_corr_page(page, 1)
-
-            corr_matrix = get_data().corr()
-            fig, ax = plt.subplots()
-            im = ax.imshow(corr_matrix, cmap='hot', interpolation='nearest')
-            fig.colorbar(im)
-
-            ax.set_xticks(range(len(corr_matrix.columns)))
-            ax.set_yticks(range(len(corr_matrix.index)))
-
-            ax.set_xticklabels(corr_matrix.columns)
-            ax.set_yticklabels(corr_matrix.index)
-
-            ax.set_xlabel('X-axis')
-            ax.set_ylabel('Y-axis')
-            ax.set_title('Парная корреляция')
-
-            page.add_control(MatplotlibChart(fig, expand=True))
-            page.update(None)
+            show_matrix(get_data().corr(), 'Парная корреляция')
         except ValueError:
             print('[Error] Corr error')
 
     def draw_pcorr(event):
         try:
             reload_corr_page(page, 2)
-
-            pcorr_matrix = get_data().pcorr()
-            fig, ax = plt.subplots()
-            im = ax.imshow(pcorr_matrix, cmap='hot', interpolation='nearest')
-            fig.colorbar(im)
-
-            ax.set_xticks(range(len(pcorr_matrix.columns)))
-            ax.set_yticks(range(len(pcorr_matrix.index)))
-
-            ax.set_xticklabels(pcorr_matrix.columns)
-            ax.set_yticklabels(pcorr_matrix.index)
-
-            ax.set_xlabel('X-axis')
-            ax.set_ylabel('Y-axis')
-            ax.set_title('Частная корреляция')
-
-            page.add_control(MatplotlibChart(fig, expand=True))
-            page.update(None)
+            show_matrix(get_data().pcorr(), 'Частная корреляция')
         except ValueError:
             print('[Error] Pcorr error')
+
+    def get_stud(matrix):
+        n = matrix.shape[0]
+        t_stat_matrix = np.zeros((n, n))
+
+        for i in range(n):
+            for j in range(n):
+                if i != j:
+                    correlation = matrix.iloc[i, j]
+                    t_stat_matrix[i, j] = correlation * np.sqrt((n - 2) / (1 - correlation ** 2))
+
+        return pd.DataFrame(t_stat_matrix, columns=matrix.columns, index=matrix.columns)
+
+    def draw_stud_corr(event):
+        try:
+            reload_corr_page(page, 3)
+            show_matrix(get_stud(get_data().corr()), 'Стьюдента парная')
+        except ValueError:
+            print('[Error] Stud corr error')
+
+    def draw_stud_pcorr(event):
+        try:
+            reload_corr_page(page, 4)
+            show_matrix(get_stud(get_data().pcorr()), 'Стьюдента частная')
+        except ValueError:
+            print('[Error] Stud pcorr error')
 
     button_headers = [
         ft.TextButton('Парная корреляция', style=ft.ButtonStyle(color='grey' if page_number == 1 else 'black'),
                       on_click=draw_corr),
         ft.TextButton('Частная корреляция', style=ft.ButtonStyle(color='grey' if page_number == 2 else 'black'),
-                      on_click=draw_pcorr)
+                      on_click=draw_pcorr),
+        ft.TextButton('Стьюдента парная', style=ft.ButtonStyle(color='grey' if page_number == 3 else 'black'),
+                      on_click=draw_stud_corr),
+        ft.TextButton('Стьюдента частная', style=ft.ButtonStyle(color='grey' if page_number == 4 else 'black'),
+                      on_click=draw_stud_pcorr),
     ]
 
     page.add_control(
