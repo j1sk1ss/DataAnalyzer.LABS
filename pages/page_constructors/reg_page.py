@@ -1,7 +1,20 @@
 import flet as ft
 
-from data_process import data_is_loaded, get_dataframe, get_target
+from data_process import data_is_loaded, get_dataframe, get_target, get_data
 from pages.page import Page
+
+
+reg_variables_fields = []
+reg_answer = ft.Text('')
+
+
+def calculate_reg(event):
+    reg_answer.value = f'{get_target()}:\n'
+    if len(reg_variables_fields) != 0:
+        values = [float(x.value) for x in reg_variables_fields]
+        reg_answer.value = reg_answer.value + f'{get_dataframe().predict([values])[0]}'
+    else:
+        return 0
 
 
 def get_reg_page(page: Page):
@@ -13,8 +26,8 @@ def get_reg_page(page: Page):
             edata = []
 
             dataframe = get_dataframe()
-            predicted = dataframe.data_body.drop(columns=[get_target()], axis=1).to_numpy()
-            predicted_output = dataframe.predict(predicted)
+            input_data = dataframe.data_body.drop(columns=[get_target()], axis=1)
+            predicted_output = dataframe.predict(input_data)
 
             expected_output = list(dataframe.data_body[get_target()])
 
@@ -78,6 +91,30 @@ def get_reg_page(page: Page):
                     border=ft.Border(
                         bottom=ft.BorderSide(4, ft.colors.with_opacity(0.5, ft.colors.ON_SURFACE))
                     )
+                )
+            )
+
+            reg_answer.value = f'{get_target()}:\n...'
+
+            def calculate_regression():
+                calculate_reg(None)
+                page.body.update()
+
+            reg_variables_fields.clear()
+            for i in get_data().columns:
+                if i is not get_target():
+                    reg_variables_fields.append(
+                        ft.TextField(
+                            label=i, data=i, on_change=lambda _: calculate_regression(),
+                            height=40, width=80, value='0.0'
+                        )
+                    )
+
+            page.add_control(
+                ft.Row(
+                    [
+                        *reg_variables_fields, reg_answer
+                    ]
                 )
             )
 

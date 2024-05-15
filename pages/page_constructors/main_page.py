@@ -1,9 +1,12 @@
 import flet as ft
 import flet_core
+import numpy as np
 import pandas as pd
 
 from data_process import data_is_loaded, load_csv, get_data, set_data, get_dataframe, set_target, get_target, summary
 from modules.data import Data
+
+from sklearn.ensemble import IsolationForest
 
 from pages.page import Page
 from pages.page_constructors.corr_page import get_corr_page
@@ -57,10 +60,6 @@ def get_main_page(page: Page):
 
         drop_column_name = ft.TextField(label='Удалить')
 
-        def normalize_dataframe(event):
-            get_dataframe().normalize()
-            page.update(get_main_page(page).body)
-
         def close_dataframe(event):
             set_data(None)
             dataframe_name.value = '...'
@@ -72,7 +71,8 @@ def get_main_page(page: Page):
             ) for header in df.columns]
 
         def reload_data(event: flet_core.control_event.ControlEvent):
-            set_target(event.control.data)
+            if event is not None:
+                set_target(event.control.data)
 
             sum_page = Page(page.body, [])
             sum_page.set_parent(page.parent)
@@ -83,6 +83,10 @@ def get_main_page(page: Page):
             page.parent.pages[4] = get_reg_page(reg_page)
 
             page.update(get_main_page(page).body)
+
+        def normalize_dataframe(event):
+            get_dataframe().normalize()
+            reload_data(None)
 
         def get_rows(df: pd.DataFrame) -> list:
             df_rows = []
@@ -101,7 +105,7 @@ def get_main_page(page: Page):
 
         def drop_column(event):
             set_data(Data(get_data().drop(columns=[drop_column_name.value], axis=1)))
-            page.update(get_main_page(page).body)
+            reload_data(None)
 
         save_data = ""
 
@@ -132,6 +136,33 @@ def get_main_page(page: Page):
 
             save_dialog.save_file()
 
+        def remove_outliers_zscore(event):
+            df = get_data()
+            df_filtered = df
+
+            for i in df.columns:
+                mean = np.mean(df[i])
+                std = np.std(df[i])
+                df_filtered = df[(np.abs((df[i] - mean) / std) < 3)]
+
+            set_data(Data(df_filtered))
+            reload_data(None)
+
+        def remove_outliers_iqr(event):
+            df = get_data()
+            df_filtered = df
+
+            for i in df.columns:
+                Q1 = df[i].quantile(0.25)
+                Q3 = df[i].quantile(0.75)
+                IQR = Q3 - Q1
+                lower_bound = Q1 - 1.5 * IQR
+                upper_bound = Q3 + 1.5 * IQR
+                df_filtered = df[(df[i] >= lower_bound) & (df[i] <= upper_bound)]
+
+            set_data(Data(df_filtered))
+            reload_data(None)
+
         table = ft.DataTable(
             columns=get_headers(get_data()),
             rows=get_rows(get_data()),
@@ -153,6 +184,8 @@ def get_main_page(page: Page):
             ft.Row(
                 [
                     ft.TextButton('Нормализовать', style=ft.ButtonStyle(color='black'), on_click=normalize_dataframe),
+                    ft.TextButton('Удалить выбросы (Z-score)', style=ft.ButtonStyle(color='black'), on_click=remove_outliers_zscore),
+                    ft.TextButton('Удалить выбросы (IQR)', style=ft.ButtonStyle(color='black'), on_click=remove_outliers_iqr),
                     ft.TextButton('Сохранить датасет', style=ft.ButtonStyle(color='black'), on_click=save_file_dialog, data='data'),
                     ft.TextButton('Сохранить отчёт', style=ft.ButtonStyle(color='black'), on_click=save_file_dialog, data='report')
                 ]

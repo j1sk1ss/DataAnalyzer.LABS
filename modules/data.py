@@ -10,8 +10,6 @@ from scipy.stats import chisquare
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error
 
-import statsmodels.api as sm
-
 from modules.common import get_lists, get_dispersion
 
 
@@ -25,6 +23,7 @@ class Data:
             self.data_body = dataframe
             self.data_names = list(self.data_body.columns.values)
             self.data_lists = get_lists(self.data_body)
+            self.target = self.data_body.columns[0]
         else:
             self.data_body = None
             self.data_names = []
@@ -195,7 +194,7 @@ class Data:
         for i in range(len(self.data_lists)):
             stat, p = shapiro(self.data_lists[i])
             answer[self.data_names[i]] = {
-                'Нормальность': stat,
+                'T': stat,
                 'P': p
             }
 
@@ -206,7 +205,7 @@ class Data:
         for i in range(len(self.data_lists)):
             stat, p = chisquare(self.data_lists[i])
             answer[self.data_names[i]] = {
-                'Нормальность': stat,
+                'T': stat,
                 'P': p
             }
 
@@ -221,26 +220,39 @@ class Data:
         return b
 
     def fit_model(self, output_name):
+        assert isinstance(self.data_body, pd.DataFrame), "self.data_body должен быть DataFrame"
+
+        # Ensure input_data is a DataFrame with proper feature names
         input_data = self.data_body.drop(columns=[output_name], axis=1)
         output_data = self.data_body[output_name]
 
+        # Fit the model
         self.model = LinearRegression()
         self.results = self.model.fit(input_data, output_data)
 
+        # Get coefficients and intercept
         coefficients = self.model.coef_
         intercept = self.model.intercept_
 
+        # Construct the equation text
         equation_text = f"{output_name} = {intercept:.2f}"
         for variable, coefficient in zip(input_data.columns, coefficients):
             equation_text += f" + {coefficient:.2f} * {variable}"
 
+        # Calculate R^2 and mean absolute error
         r_squared = self.model.score(input_data, output_data)
         mean_abs_error = mean_absolute_error(output_data, self.model.predict(input_data))
 
         n = len(output_data)
         p = input_data.shape[1]
-        f_statistic = (r_squared / (1 - r_squared)) * ((n - p - 1) / p)
-        p_value = 1 - sps.norm.cdf(f_statistic, p, n - p - 1)
+
+        # Check to prevent divide by zero error
+        if r_squared == 1:
+            f_statistic = np.inf
+            p_value = 0.0
+        else:
+            f_statistic = (r_squared / (1 - r_squared)) * ((n - p - 1) / p)
+            p_value = 1 - sps.f.cdf(f_statistic, p, n - p - 1)
 
         return {
             'R^2': r_squared,
@@ -282,5 +294,9 @@ class Data:
             }
         except ValueError:
             return {
-                'Ошибка': 101
+                'Ошибка': {
+                    'Название': 'Ошибка в анализе данных',
+                    'Причина': 'Наличие не числовых столбцов',
+                    'Код': 1
+                }
             }
