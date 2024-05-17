@@ -6,8 +6,6 @@ import pandas as pd
 from data_process import data_is_loaded, load_csv, get_data, set_data, get_dataframe, set_target, get_target, summary
 from modules.data import Data
 
-from sklearn.ensemble import IsolationForest
-
 from pages.page import Page
 from pages.page_constructors.corr_page import get_corr_page
 from pages.page_constructors.graphs_page import get_graphs_page
@@ -153,11 +151,11 @@ def get_main_page(page: Page):
             df_filtered = df
 
             for i in df.columns:
-                Q1 = df[i].quantile(0.25)
-                Q3 = df[i].quantile(0.75)
-                IQR = Q3 - Q1
-                lower_bound = Q1 - 1.5 * IQR
-                upper_bound = Q3 + 1.5 * IQR
+                q1 = df[i].quantile(0.25)
+                q3 = df[i].quantile(0.75)
+                iqr = q3 - q1
+                lower_bound = q1 - 1.5 * iqr
+                upper_bound = q3 + 1.5 * iqr
                 df_filtered = df[(df[i] >= lower_bound) & (df[i] <= upper_bound)]
 
             set_data(Data(df_filtered))
@@ -177,20 +175,21 @@ def get_main_page(page: Page):
         )
 
         lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=False)
-        lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=close_dataframe, tooltip='Закрыть'))
 
+        lv.controls.append(ft.IconButton(ft.icons.CLOSE, icon_color='black', on_click=close_dataframe, tooltip='Закрыть'))
         lv.controls.append(drop_column_row)
         lv.controls.append(
             ft.Row(
                 [
                     ft.TextButton('Нормализовать', style=ft.ButtonStyle(color='black'), on_click=normalize_dataframe),
                     ft.TextButton('Удалить выбросы (Z-score)', style=ft.ButtonStyle(color='black'), on_click=remove_outliers_zscore),
-                    ft.TextButton('Удалить выбросы (IQR)', style=ft.ButtonStyle(color='black'), on_click=remove_outliers_iqr),
+                    ft.TextButton('Удалить выбросы (iqr)', style=ft.ButtonStyle(color='black'), on_click=remove_outliers_iqr),
                     ft.TextButton('Сохранить датасет', style=ft.ButtonStyle(color='black'), on_click=save_file_dialog, data='data'),
                     ft.TextButton('Сохранить отчёт', style=ft.ButtonStyle(color='black'), on_click=save_file_dialog, data='report')
                 ]
             )
         )
+
         lv.controls.append(table)
 
         page.body.overlay.append(save_dialog)
